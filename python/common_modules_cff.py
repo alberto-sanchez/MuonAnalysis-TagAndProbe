@@ -4,6 +4,10 @@ from MuonAnalysis.TagAndProbe.nearbyMuonsInfo_cfi import nearbyMuonsInfo as tagP
 from JetMETCorrections.Configuration.JetCorrectors_cff import ak4PFCHSL1FastL2L3CorrectorChain, ak4PFCHSL1FastL2L3Corrector
 from JetMETCorrections.Configuration.JetCorrectors_cff import ak4PFCHSL3AbsoluteCorrector, ak4PFCHSL2RelativeCorrector, ak4PFCHSL1FastjetCorrector
 
+tagProbeStaSeparation = tagProbeSeparation.clone(
+    src = cms.InputTag("tpPairsSta")
+) 
+
 #########################################################################################
 ##        Object counting modules                                                      ##
 #########################################################################################
@@ -183,6 +187,9 @@ probeMultiplicity = cms.EDProducer("ProbeMulteplicityProducer",
    #pairCut  = cms.string(""),  # count only probes whose pairs satisfy this cut
    #probeCut = cms.string(""),  # count only probes satisfying this cut
 )
+probeStaMultiplicity = probeMultiplicity.clone(
+   pairs = cms.InputTag("tpPairsSta")
+) 
 probeMultiplicityTMGM = cms.EDProducer("ProbeMulteplicityProducer",
    pairs = cms.InputTag("tpPairs"),
    #pairCut  = cms.string(""),  # count only probes whose pairs satisfy this cut
@@ -238,3 +245,25 @@ goodGenMuons = cms.EDFilter("GenParticleSelector",
     cut = cms.string("abs(pdgId) == 13 && pt > 3 && abs(eta) < 2.4 && status == 1 && isPromptFinalState")
 )
 
+goodGenMuonsFromJpsi = cms.EDFilter("GenParticleSelector",
+    src = cms.InputTag("genParticles"),
+    cut = cms.string("abs(pdgId) == 13 && abs(eta) < 2.4 && numberOfMothers == 1 && motherRef.pdgId == 443")
+)
+
+softIDToGenMatch = cms.EDProducer("MatcherUsingTracksWithTagAssoc",
+    src     = cms.InputTag("probeMuons"),
+    matched = cms.InputTag("goodGenMuonsFromJpsi"),  
+    tags      = cms.InputTag("tagMuons"), # needed just to ask for #Deltaz < tagDeltaZ
+    tagDeltaZ = cms.double(1.0),
+    algorithm = cms.string("byDirectComparison"), 
+    srcTrack     = cms.string("muon"),    srcState = cms.string("atVertex"), 
+    matchedTrack = cms.string("tracker"), matchedState = cms.string("atVertex"),
+    maxDeltaR        = cms.double(1.),   # large range in DR (we can tighten it later)
+    maxDeltaEta      = cms.double(0.4),  # small in eta, which is more precise
+    maxDeltaLocalPos = cms.double(100),
+    maxDeltaPtRel    = cms.double(5),   # |pt(src) - pt(matched)|/pt(matched)
+    sortBy           = cms.string("deltaR"),
+    requireSameCharge = cms.bool(True),
+    softID = cms.bool(False),
+    objCut = cms.string("")
+)

@@ -50,6 +50,8 @@ namespace pat {
       /// Some extra configurables
       bool dontFailOnMissingInput_;
       bool writeExtraPATOutput_;
+      bool softID_;
+      StringCutObjectSelector<reco::Candidate,true> objCut_; // lazy parsing, to allow cutting on variables not in reco::Candidate class
 
       /// Store extra information in a ValueMap
       template<typename T>
@@ -68,7 +70,9 @@ pat::MatcherUsingTracksWithTagAssoc::MatcherUsingTracksWithTagAssoc(const edm::P
     tags_(iConfig.getParameter<edm::InputTag>("tags")),
     deltaZ_(iConfig.getParameter<double>("tagDeltaZ")),
     algo_(iConfig),
-    dontFailOnMissingInput_(iConfig.existsAs<bool>("dontFailOnMissingInput") ? iConfig.getParameter<bool>("dontFailOnMissingInput") : false)
+    dontFailOnMissingInput_(iConfig.existsAs<bool>("dontFailOnMissingInput") ? iConfig.getParameter<bool>("dontFailOnMissingInput") : false),
+    softID_(iConfig.existsAs<bool>("softID") ? iConfig.getParameter<bool>("softID") : false),
+    objCut_(iConfig.existsAs<std::string>("objectSelection") ? iConfig.getParameter<std::string>("objectSelection") : "", true)
 {
     // this is the basic output (edm::Association is not generic)
     produces<edm::ValueMap<reco::CandidatePtr> >(); 
@@ -129,6 +133,7 @@ pat::MatcherUsingTracksWithTagAssoc::produce(edm::Event & iEvent, const edm::Eve
         // loop on the source collection, and request for the match
         for (itsrc = src->begin(), isrc = 0; itsrc != edsrc; ++itsrc, ++isrc) {
             match[isrc] = -1;
+            if (softID_ && !(objCut_(*itsrc))) continue;
             for (itmatched = matched->begin(), imatched = 0; itmatched != edmatched; ++itmatched, ++imatched) {
                 double matchedz = itmatched->vz(); 
                 bool isAssoc = false;
