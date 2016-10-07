@@ -250,6 +250,11 @@ goodGenMuonsFromJpsi = cms.EDFilter("GenParticleSelector",
     cut = cms.string("abs(pdgId) == 13 && abs(eta) < 2.4 && numberOfMothers == 1 && motherRef.pdgId == 443")
 )
 
+goodGenMuonsFromUpsilon = cms.EDFilter("GenParticleSelector",
+    src = cms.InputTag("genParticles"),
+    cut = cms.string("abs(pdgId) == 13 && abs(eta) < 2.4 && numberOfMothers == 1 && motherRef.pdgId == 553")
+)
+
 softIDToGenMatch = cms.EDProducer("MatcherUsingTracksWithTagAssoc",
     src     = cms.InputTag("probeMuons"),
     matched = cms.InputTag("goodGenMuonsFromJpsi"),  
